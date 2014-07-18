@@ -14,19 +14,15 @@
 package org.xiforge.pentaho.di.trans.step.parsejsonstring;
 
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
 public class ParseJsonStringData extends BaseStepData implements StepDataInterface
 {
-    public RowMetaInterface previousMeta;
-    public RowMetaInterface outputMeta;
-    public RowMetaInterface conversionMeta;
-    public ValueMetaInterface valueMeta;
+    public RowMetaInterface outputRowMeta;
 
-    public int fieldNbr ;
-    public int fieldPos ;
+    public int fieldNbr;
+    public int fieldPos;
 
     public ParseJsonStringData()
     {

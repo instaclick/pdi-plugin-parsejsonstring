@@ -42,7 +42,7 @@ import org.w3c.dom.Node;
 
 public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterface
 {
-    private static Class<?> PKG = ParseJsonStringMeta.class;
+    private static final Class<?> PKG = ParseJsonStringMeta.class;
     private String fieldToParse ;
     private String[] fieldName ;
     private String[] xPath ;
@@ -61,6 +61,7 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
         super() ;
     }
 
+    @Override
     public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, String[] input, String[] output, RowMetaInterface info)
     {
         String error_message = "" ;
@@ -103,21 +104,25 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
         }
     }
 
+    @Override
     public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta, Trans trans)
     {
         return new ParseJsonString(stepMeta, stepDataInterface, cnr, transMeta, trans);
     }
 
+    @Override
     public StepDataInterface getStepData()
     {
         return new ParseJsonStringData();
     }
 
+    @Override
     public void loadXML(Node stepNode, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleXMLException
     {
         readData(stepNode);
     }
 
+    @Override
     public void readRep(Repository rep, ObjectId id_step, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleException
     {
         try
@@ -139,13 +144,12 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
                 fieldTrimType[i] = ValueMeta.getTrimTypeByCode(rep.getStepAttributeString(id_step, i, "fieldTrimType"));
                 fieldRepeat[i] = "Y".equalsIgnoreCase(rep.getStepAttributeString(id_step, i, "fieldRepeat"));
             }
-        }
-        catch (Exception e)
-        {
+        } catch (KettleException e) {
             throw new KettleException(BaseMessages.getString(PKG, "ParsexStringMeta.Exception.UnexpectedErrorInReadingStepInfo"), e);
         }
     }
 
+    @Override
     public void saveRep(Repository rep, ObjectId id_transformation, ObjectId id_step) throws KettleException
     {
         try
@@ -165,13 +169,12 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
                 rep.saveStepAttribute(id_transformation, id_step, i, "fieldTrimType", ValueMeta.getTrimTypeCode(fieldTrimType[i]));
                 rep.saveStepAttribute(id_transformation, id_step, i, "fieldRepeat", fieldRepeat[i]?"Y":"N");
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new KettleException(BaseMessages.getString(PKG, "ParsexStringMeta.Exception.UnalbeToSaveStepInfoToRepository")+id_step, e);
         }
     }
 
+    @Override
     public void setDefault()
     {
         fieldToParse = "" ;
@@ -321,34 +324,35 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
                 fieldTrimType[i] = ValueMeta.getTrimTypeByCode(XMLHandler.getTagValue(subNode, "fieldTrimType"));
                 fieldRepeat[i] = "Y".equalsIgnoreCase(XMLHandler.getTagValue(subNode, "fieldRepeat"));
             }
-        }
-        catch(Exception e)
-        {
+        } catch(Exception e) {
             throw new KettleXMLException(BaseMessages.getString(PKG, "ParsexStringMeta.Exception.UnableToLoadStepInfoFromXML"), e);
         }
     }
 
     public void allocate(int nbrFields)
     {
-        fieldName  = new String[nbrFields];
-        xPath = new String[nbrFields];
-        fieldType = new int[nbrFields];
-        fieldFormat = new String[nbrFields];
-        fieldLength = new int[nbrFields];
-        fieldPrecision = new int[nbrFields];
-        fieldCurrency = new String[nbrFields];
-        fieldDecimal = new String[nbrFields];
-        fieldGroup = new String[nbrFields];
-        fieldTrimType = new int[nbrFields];
-        fieldRepeat = new boolean[nbrFields];
+        fieldName       = new String[nbrFields];
+        xPath           = new String[nbrFields];
+        fieldType       = new int[nbrFields];
+        fieldFormat     = new String[nbrFields];
+        fieldLength     = new int[nbrFields];
+        fieldPrecision  = new int[nbrFields];
+        fieldCurrency   = new String[nbrFields];
+        fieldDecimal    = new String[nbrFields];
+        fieldGroup      = new String[nbrFields];
+        fieldTrimType   = new int[nbrFields];
+        fieldRepeat     = new boolean[nbrFields];
     }
 
+    @Override
     public Object clone()
     {
-        ParseJsonStringMeta retval = (ParseJsonStringMeta)super.clone();
-        final int nbrFields = fieldName.length;
+        final ParseJsonStringMeta retval = (ParseJsonStringMeta)super.clone();
+        final int nbrFields              = fieldName.length;
+
         retval.fieldToParse = fieldToParse ;
         retval.allocate(nbrFields);
+
         for (int i=0;i < nbrFields;i++)
         {
             retval.fieldName[i] = fieldName[i];
@@ -367,6 +371,7 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
         return retval;
     }
 
+    @Override
     public String getXML()
     {
         final StringBuilder retval = new StringBuilder(32768);
@@ -392,12 +397,13 @@ public class ParseJsonStringMeta extends BaseStepMeta implements StepMetaInterfa
         return retval.toString();
     }
 
+    @Override
     public void getFields(RowMetaInterface r, String name, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space)
     {
         // Remove the field to parse
-        int idx = r.indexOfValue(fieldToParse);
-        if (idx<0) //not found
-        {
+        final int idx = r.indexOfValue(fieldToParse);
+
+        if (idx<0) {
             throw new RuntimeException(BaseMessages.getString(PKG, "ParseJsonString.Log.CouldNotFindFieldToParse",fieldToParse));
         }
 

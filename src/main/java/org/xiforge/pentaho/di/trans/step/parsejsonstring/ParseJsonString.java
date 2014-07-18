@@ -17,17 +17,15 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Iterator;
-
 import net.sf.json.JSON;
-import net.sf.json.JSONObject;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
-
 import org.apache.commons.jxpath.JXPathContext;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowDataUtil;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.Trans;
@@ -40,7 +38,7 @@ import org.pentaho.di.trans.step.StepMetaInterface;
 
 public class ParseJsonString extends BaseStep implements StepInterface
 {
-    private static Class<?> PKG = ParseJsonStringMeta.class ;
+    private static final Class<?> PKG = ParseJsonStringMeta.class ;
     private ParseJsonStringMeta meta;
     private ParseJsonStringData data;
 
@@ -49,155 +47,123 @@ public class ParseJsonString extends BaseStep implements StepInterface
         super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     }
 
+    @Override
     public boolean init(StepMetaInterface smi, StepDataInterface sdi)
     {
-        meta=(ParseJsonStringMeta)smi;
-        data=(ParseJsonStringData)sdi;
+        meta = (ParseJsonStringMeta) smi;
+        data = (ParseJsonStringData) sdi;
 
-        if (super.init(smi, sdi))
-        {
-            return true;
-        }
-        return false;
+        return super.init(smi, sdi);
     }
 
+    @Override
     public synchronized boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException
     {
-        meta=(ParseJsonStringMeta)smi;
-        data=(ParseJsonStringData)sdi;
+        meta = (ParseJsonStringMeta) smi;
+        data = (ParseJsonStringData) sdi;
 
-        Object[] r = this.getRow();
-        if ( r == null )
-        {
+        final Object[] r = this.getRow();
+
+        if ( r == null ) {
             setOutputDone();
             return false;
         }
 
-        if (this.first)
-        {
-            this.first=false;
-
+        if (this.first) {
             // Copy previous step metadata
-            data.previousMeta = getInputRowMeta().clone();
+            this.first         = false;
+            data.outputRowMeta = getInputRowMeta().clone();
+            data.fieldPos      = data.outputRowMeta.indexOfValue(meta.getFieldToParse());
 
-            // Find field Name
-            data.fieldPos = data.previousMeta.indexOfValue(meta.getFieldToParse());
-            if (data.fieldPos < 0 )
-            {
+            if (data.fieldPos < 0 ) {
                 throw new KettleValueException(BaseMessages.getString(PKG, "ParseJsonString.Log.CouldNotFindFieldToParse",meta.getFieldToParse()));
             }
 
             // Check if parsing field is String type
-            if(!data.previousMeta.getValueMeta(data.fieldPos).isString())
-            {
+            if( ! data.outputRowMeta.getValueMeta(data.fieldPos).isString()) {
                 throw new KettleValueException((BaseMessages.getString(PKG, "ParseJsonString.Log.FieldToParseNotValid",meta.getFieldToParse())));
             }
 
             // Copy Input metadata to output metadata
-            data.outputMeta= getInputRowMeta().clone();
+            data.outputRowMeta = getInputRowMeta().clone();
             // Create extra fields in output metadata
-            meta.getFields(data.outputMeta, this.getStepname(), null, null, this);
-            // Create conversion metadata
-            data.conversionMeta = data.outputMeta.clone();
-
-            //for (ValueMetaInterface valueMeta : data.conversionMeta.getValueMetaList())
-            //{
-            //  valueMeta.setType(ValueMetaInterface.TYPE_STRING);
-            //}
-
-        }
-
-        // Parsing field
-
-        // Using SF's JSON lib
-        JSON json = JSONSerializer.toJSON(r[data.fieldPos].toString());
-        JXPathContext context = JXPathContext.newContext(json);
-
-        // Row count
-        int rownum = 0 ;
-        for (Iterator<?> iter = context.iterate(meta.getXPath()[0]); iter.hasNext();)
-        {
-            Object item = iter.next();
-            if(item != null)
-            {
-                rownum++ ;
-            }
-        }
-
-        // Create output buffer area
-        Object[] buffer = new Object[rownum];
-        for (int i = 0; i < rownum; i++)
-        {
-            Object[] outputRowData = RowDataUtil.createResizedCopy(r, data.outputMeta.size());
-            buffer[i] = outputRowData ;
-        }
-
-        // Parsing each path into otuput rows
-        for (int i = 0; i < meta.getFieldName().length; i++)
-        {
-            ValueMetaInterface targetValueMeta = data.outputMeta.getValueMeta(data.previousMeta.size()+ i);
-            ValueMetaInterface sourceValueMeta = data.conversionMeta.getValueMeta(data.previousMeta.size() + i);
-            DateFormat df = null ;
-            if (targetValueMeta.getType() == ValueMetaInterface.TYPE_DATE)
-            {
-                 df = new SimpleDateFormat(meta.getFieldFormat()[i]);
-            }
-            int j = 0 ;
-            for (Iterator<?> iter = context.iterate(meta.getXPath()[i]);iter.hasNext();)
-            {
-                Object item = iter.next();
-                if( item.getClass().getName() == JSONObject.class.getName() || item.getClass().getName() == JSONArray.class.getName())
-                {
-                    ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, "{" + meta.getFieldName()[i] + ":" + item.toString() + "}") ;
-                }
-                else
-                {
-                    switch(targetValueMeta.getType())
-                    {
-                        case ValueMetaInterface.TYPE_STRING:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, item.toString());
-                            break;
-                        case ValueMetaInterface.TYPE_NUMBER:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, Double.valueOf(item.toString()));
-                            break;
-                        case ValueMetaInterface.TYPE_INTEGER:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, Long.valueOf(item.toString()));
-                            break;
-                        case ValueMetaInterface.TYPE_DATE:
-                            try
-                            {
-                                ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, df.parse(item.toString()));
-                            }
-                            catch (ParseException e)
-                            {
-                                throw new KettleValueException("Unable to convert data type of value");
-                            }
-                            break;
-                        case ValueMetaInterface.TYPE_BIGNUMBER:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, new BigDecimal(item.toString()));
-                            break;
-                        case ValueMetaInterface.TYPE_BOOLEAN:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, Boolean.valueOf(item.toString()));
-                            break;
-                        case ValueMetaInterface.TYPE_BINARY:
-                            ((Object[]) buffer[j])[data.previousMeta.size() + i] = targetValueMeta.convertData(sourceValueMeta, item);
-                            break;
-                        default:
-                            throw new KettleValueException("Unable to convert data type of value");
-                    }
-                }
-                j++ ;
-            }
+            meta.getFields(data.outputRowMeta, this.getStepname(), null, null, this);
         }
 
         // Output buffer to output
-        for (int i = 0; i < rownum; i++)
-        {
-            putRow(data.outputMeta, (Object[]) buffer[i]);
-            this.incrementLinesOutput();
-        }
+        putRow(data.outputRowMeta, addRowData(r));
 
         return true ;
     }
 
+    private Object[] addRowData(Object[] r) throws KettleException
+    {
+        // Parsing field
+        final JSON json                 = JSONSerializer.toJSON(r[data.fieldPos].toString());
+        final JXPathContext context     = JXPathContext.newContext(json);
+        final String[] fieldNames       = meta.getFieldName();
+        final RowMetaInterface rowMeta  = data.outputRowMeta;
+
+        // Parsing each path into otuput rows
+        for (int i = 0; i < fieldNames.length; i++) {
+            final String fieldPath                   = meta.getXPath()[i];
+            final String fieldName                   = meta.getFieldName()[i];
+            final Object fieldValue                  = context.getValue(fieldPath);
+            final Integer fieldIndex                 = rowMeta.indexOfValue(fieldNames[i]);
+            final ValueMetaInterface valueMeta       = rowMeta.getValueMeta(fieldIndex);
+            final DateFormat df                      = (valueMeta.getType() == ValueMetaInterface.TYPE_DATE) 
+                ? new SimpleDateFormat(meta.getFieldFormat()[i])
+                : null;
+
+            // safely add the unique field at the end of the output row
+            r = RowDataUtil.addValueData(r, fieldIndex, getRowDataValue(fieldName, valueMeta, valueMeta, fieldValue, df));
+        }
+
+        return r;
+    }
+    
+    private Object getRowDataValue(final String fieldName, final ValueMetaInterface targetValueMeta, final ValueMetaInterface sourceValueMeta, final Object value, final DateFormat df) throws KettleException
+    {
+        if (value == null) {
+            return value;
+        }
+
+        if (ValueMetaInterface.TYPE_STRING == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, value.toString());
+        }
+        
+        if (ValueMetaInterface.TYPE_NUMBER == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, Double.valueOf(value.toString()));
+        }
+        
+        if (ValueMetaInterface.TYPE_INTEGER == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, Long.valueOf(value.toString()));
+        }
+        
+        if (ValueMetaInterface.TYPE_BIGNUMBER == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, new BigDecimal(value.toString()));
+        }
+        
+        if (ValueMetaInterface.TYPE_BOOLEAN == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, Boolean.valueOf(value.toString()));
+        }
+        
+        if (ValueMetaInterface.TYPE_BINARY == targetValueMeta.getType()) {
+            return targetValueMeta.convertData(sourceValueMeta, value);
+        }
+
+        if (ValueMetaInterface.TYPE_DATE == targetValueMeta.getType()) {
+            try {
+                return targetValueMeta.convertData(sourceValueMeta, df.parse(value.toString()));
+            } catch (final ParseException e) {
+                throw new KettleValueException("Unable to convert data type of value");
+            }
+        }
+
+        if (value instanceof JSONObject || value instanceof JSONArray) {
+            return targetValueMeta.convertData(targetValueMeta, "{" + fieldName + ":" + value.toString() + "}");
+        }
+
+        throw new KettleValueException("Unable to convert data type of value");
+    }
 }
