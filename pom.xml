@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.xiforge</groupId>
+    <artifactId>pdi-plugin-parsejsonstring</artifactId>
+    <version>2.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>pdi-plugin-parsejsonstring</name>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.plugin.deploy>${project.build.directory}/plugin</project.plugin.deploy>
+        <kettle.version>4.1.4-SNAPSHOT</kettle.version>
+        <skipTests>false</skipTests>
+        <pluginInstallDir>/Applications/pentaho4/data-integration/plugins/steps/parsejsonstring</pluginInstallDir>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>pentaho.kettle</groupId>
+            <artifactId>kettle-core</artifactId>
+            <version>${kettle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho.kettle</groupId>
+            <artifactId>kettle-engine</artifactId>
+            <version>${kettle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho.kettle</groupId>
+            <artifactId>kettle-ui-swt</artifactId>
+            <version>${kettle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho.kettle</groupId>
+            <artifactId>kettle-db</artifactId>
+            <version>${kettle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.swt.win32.win32</groupId>
+            <artifactId>x86</artifactId>
+            <version>3.3.0-v3346</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-jxpath</groupId>
+            <artifactId>commons-jxpath</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.ezmorph</groupId>
+            <artifactId>ezmorph</artifactId>
+            <version>1.0.6</version>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <id>repository.pentaho.org</id>
+            <name>repository.pentaho.org</name>
+            <url>http://repository.pentaho.org/artifactory/pentaho</url>
+        </repository>
+        <repository>
+            <id>thirdparty.repository.pentaho.org</id>
+            <name>thirdparty.pentaho.org</name>
+            <url>http://repository.pentaho.org/artifactory/third-party</url>
+        </repository>
+    </repositories>
+    <build>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/java</directory>
+            </testResource>
+        </testResources>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <descriptor>src/main/assembly/assembly.xml</descriptor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>antrun-package-plugin</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <target name="package-plugin">
+                                <delete dir="${project.plugin.deploy}/${project.name}"/>
+                                <mkdir dir="${project.plugin.deploy}/${project.name}"/>
+                                <copy tofile="${project.plugin.deploy}/${project.name}/${project.name}.jar" file="${project.build.directory}/${project.build.finalName}-dep.jar" />
+                                <copy todir="${project.plugin.deploy}/${project.name}">
+                                    <fileset dir="${basedir}/src/main/resources">
+                                        <include name="**/*.*" />
+                                    </fileset>
+                                </copy>
+                                <zip destfile="${project.build.directory}/${project.name}-${project.version}.zip" basedir="${project.plugin.deploy}"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>antrun-install-plugin</id>
+                        <phase>install</phase>
+                        <configuration>
+                            <target name="install-plugin">
+                                <delete dir="${pluginInstallDir}"/>
+                                <mkdir dir="${pluginInstallDir}" />
+                                <copy todir="${pluginInstallDir}">
+                                    <fileset dir="${project.plugin.deploy}" includes="**/*.*" />
+                                </copy>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.15</version>
+                <configuration>
+                    <skipTests>${skipTests}</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
