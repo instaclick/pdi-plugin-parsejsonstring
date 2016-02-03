@@ -84,7 +84,7 @@ public class ParseJsonStringDialog extends BaseStepDialog implements StepDialogI
 	public ParseJsonStringDialog(Shell parent, Object in, TransMeta transMeta, String stepname) 
 	{
 		super(parent, (BaseStepMeta) in, transMeta, stepname);
-		meta = (ParseJsonStringMeta) baseStepMeta ;
+		meta = (ParseJsonStringMeta) in ;
 	}
 
 	public String open() 
