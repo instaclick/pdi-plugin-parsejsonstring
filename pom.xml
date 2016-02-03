@@ -9,7 +9,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.plugin.deploy>${project.build.directory}/plugin</project.plugin.deploy>
-        <kettle.version>4.1.4-SNAPSHOT</kettle.version>
+        <kettle.version>4.1.4-GA</kettle.version>
         <skipTests>false</skipTests>
         <pluginInstallDir>/Applications/pentaho4/data-integration/plugins/steps/parsejsonstring</pluginInstallDir>
     </properties>
@@ -83,12 +83,7 @@
         <repository>
             <id>repository.pentaho.org</id>
             <name>repository.pentaho.org</name>
-            <url>http://repository.pentaho.org/artifactory/pentaho</url>
-        </repository>
-        <repository>
-            <id>thirdparty.repository.pentaho.org</id>
-            <name>thirdparty.pentaho.org</name>
-            <url>http://repository.pentaho.org/artifactory/third-party</url>
+            <url>http://repo.pentaho.org/content/groups/omni</url>
         </repository>
         <repository>
             <id>mvnrepository</id>
